@@ -112,6 +112,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add a child node to the selected node
     function addChildNode(parentNode, nodeName, isOn = true) {
+        // A child node can't be ON if its parent is OFF
+        if (!parentNode.isOn) {
+            isOn = false;
+        }
+        
         const newNode = {
             id: generateId(),
             name: nodeName || `Node ${parentNode.children.length + 1}`,
@@ -152,9 +157,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleNodeState(node) {
         node.data.isOn = !node.data.isOn;
         
-        // If this is the root node, update all child nodes to match root's state
-        if (!node.parent && !node.data.isOn) {
-            // Root is turned OFF, turn off all children recursively
+        // If a node is turned OFF, turn off all its children recursively
+        if (!node.data.isOn) {
             setSubtreeState(node, false);
         }
         
@@ -818,8 +822,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function showAddChildDialog(parentNode) {
         dialogTitle.textContent = 'Add Child Node';
         nodeNameInput.value = `Child ${parentNode.children ? parentNode.children.length + 1 : 1}`;
-        nodeStateInput.checked = true;
-        stateLabel.textContent = 'ON';
+        
+        // If parent is OFF, child must be OFF too
+        if (!parentNode.data.isOn) {
+            nodeStateInput.checked = false;
+            nodeStateInput.disabled = true;
+            stateLabel.textContent = 'OFF (Parent is OFF)';
+        } else {
+            nodeStateInput.checked = true;
+            nodeStateInput.disabled = false;
+            stateLabel.textContent = 'ON';
+        }
         
         nodeDialog.dataset.mode = 'add';
         nodeDialog.style.display = 'block';
@@ -831,8 +844,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function showRenameDialog(node) {
         dialogTitle.textContent = 'Rename Node';
         nodeNameInput.value = node.data.name;
-        nodeStateInput.checked = node.data.isOn;
-        stateLabel.textContent = node.data.isOn ? 'ON' : 'OFF';
+        
+        // Check if parent is OFF - if so, this node must remain OFF
+        const parentIsOff = node.parent && !node.parent.data.isOn;
+        if (parentIsOff) {
+            nodeStateInput.checked = false;
+            nodeStateInput.disabled = true;
+            stateLabel.textContent = 'OFF (Parent is OFF)';
+        } else {
+            nodeStateInput.checked = node.data.isOn;
+            nodeStateInput.disabled = false;
+            stateLabel.textContent = node.data.isOn ? 'ON' : 'OFF';
+        }
         
         nodeDialog.dataset.mode = 'rename';
         nodeDialog.style.display = 'block';
@@ -1372,7 +1395,16 @@ document.addEventListener('DOMContentLoaded', function() {
             addChildNode(currentNode.data, nodeName, isOn);
         } else if (mode === 'rename' && currentNode) {
             renameNode(currentNode, nodeName);
+            
+            // Update node state and propagate to children if turning off
+            const wasOn = currentNode.data.isOn;
             currentNode.data.isOn = isOn;
+            
+            // If turning off, make sure children are also turned off
+            if (wasOn && !isOn) {
+                setSubtreeState(currentNode, false);
+            }
+            
             updateTree();
         }
         
