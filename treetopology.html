@@ -117,66 +117,220 @@
     <div id="info-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <h2>Understanding Tree Topology</h2>
+            <div class="modal-header">
+                <i class="fas fa-project-diagram modal-icon"></i>
+                <h2>Understanding Tree Topology</h2>
+            </div>
+            
             <div class="modal-section">
-                <h3>What is Tree Topology?</h3>
-                <p>A tree topology is a hierarchical network structure in which components are arranged like the branches of a tree. It starts from a root node at the top and branches out into multiple levels of child nodes.</p>
-                <div class="image-container">
-                    <img src="assets/tree-topology.png" alt="Tree Topology Illustration" class="concept-image">
+                <h3><i class="fas fa-info-circle"></i> What is Tree Topology?</h3>
+                <div class="section-content">
+                    <p>A tree topology is a hierarchical network structure in which components are arranged like the branches of a tree. It starts from a root node at the top and branches out into multiple levels of child nodes.</p>
+                    <div class="image-container">
+                        <img src="assets/tree-topology.png" alt="Tree Topology Illustration" class="concept-image">
+                        <div class="image-caption">Visual representation of a tree network with root, parent, and child nodes</div>
+                    </div>
                 </div>
             </div>
+            
             <div class="modal-section">
-                <h3>Key Terminology</h3>
-                <ul>
-                    <li><strong>Root Node:</strong> The top-level node in the hierarchy that serves as the central point of the tree.</li>
-                    <li><strong>Parent Node:</strong> A node that has one or more child nodes connected below it.</li>
-                    <li><strong>Child Node:</strong> A node connected to a parent node above it.</li>
-                    <li><strong>Leaf Node:</strong> A node at the edge of the tree with no children.</li>
-                    <li><strong>Branch:</strong> A transmission path connecting different nodes.</li>
-                    <li><strong>Depth/Level:</strong> The distance from the root to a particular node.</li>
-                </ul>
+                <h3><i class="fas fa-code-branch"></i> Key Terminology</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-circle"></i>
+                                <h4>Root Node</h4>
+                            </div>
+                            <p>The top-level node in the hierarchy that serves as the central point of the tree.</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-sitemap"></i>
+                                <h4>Parent Node</h4>
+                            </div>
+                            <p>A node that has one or more child nodes connected below it.</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-child"></i>
+                                <h4>Child Node</h4>
+                            </div>
+                            <p>A node connected to a parent node above it.</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-leaf"></i>
+                                <h4>Leaf Node</h4>
+                            </div>
+                            <p>A node at the edge of the tree with no children.</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-bezier-curve"></i>
+                                <h4>Branch</h4>
+                            </div>
+                            <p>A transmission path connecting different nodes.</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-level-down-alt"></i>
+                                <h4>Depth/Level</h4>
+                            </div>
+                            <p>The distance from the root to a particular node.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
             <div class="modal-section">
-                <h3>Advantages</h3>
-                <ul>
-                    <li>Scalable - Easy to expand by adding more nodes</li>
-                    <li>Manageable - Simple hierarchical structure</li>
-                    <li>Efficient - No loops or collisions in data transmission</li>
-                    <li>Centralized administration from the root node</li>
-                    <li>Good for networks with clear hierarchies</li>
-                </ul>
+                <h3><i class="fas fa-plus-circle"></i> Advantages</h3>
+                <div class="section-content">
+                    <div class="benefits-list">
+                        <div class="benefit-item">
+                            <i class="fas fa-expand"></i>
+                            <div>
+                                <h4>Scalable</h4>
+                                <p>Easy to expand by adding more nodes</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-tasks"></i>
+                            <div>
+                                <h4>Manageable</h4>
+                                <p>Simple hierarchical structure</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <div>
+                                <h4>Efficient</h4>
+                                <p>No loops or collisions in data transmission</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-server"></i>
+                            <div>
+                                <h4>Centralized</h4>
+                                <p>Administration from the root node</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-building"></i>
+                            <div>
+                                <h4>Hierarchical</h4>
+                                <p>Good for networks with clear hierarchies</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
             <div class="modal-section">
-                <h3>Disadvantages</h3>
-                <ul>
-                    <li>Single point of failure - If the root node fails, the entire network below it fails</li>
-                    <li>Limited redundancy - Single paths between nodes</li>
-                    <li>Performance bottlenecks can occur at higher levels</li>
-                    <li>Limited scalability in depth (affects performance)</li>
-                </ul>
+                <h3><i class="fas fa-minus-circle"></i> Disadvantages</h3>
+                <div class="section-content">
+                    <div class="drawbacks-list">
+                        <div class="drawback-item">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <h4>Single Point of Failure</h4>
+                                <p>If the root node fails, the entire network below it fails</p>
+                            </div>
+                        </div>
+                        <div class="drawback-item">
+                            <i class="fas fa-route"></i>
+                            <div>
+                                <h4>Limited Redundancy</h4>
+                                <p>Single paths between nodes</p>
+                            </div>
+                        </div>
+                        <div class="drawback-item">
+                            <i class="fas fa-hourglass-half"></i>
+                            <div>
+                                <h4>Performance Bottlenecks</h4>
+                                <p>Can occur at higher levels</p>
+                            </div>
+                        </div>
+                        <div class="drawback-item">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                            <div>
+                                <h4>Limited Scalability</h4>
+                                <p>In depth (affects performance)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
             <div class="modal-section">
-                <h3>Real-World Applications</h3>
-                <ul>
-                    <li>File systems organization</li>
-                    <li>Directory services (like LDAP and Active Directory)</li>
-                    <li>Network routing (spanning tree protocols)</li>
-                    <li>Website navigation structures</li>
-                    <li>Organizational hierarchies</li>
-                    <li>Database index structures (B-trees)</li>
-                </ul>
+                <h3><i class="fas fa-laptop-code"></i> Real-World Applications</h3>
+                <div class="section-content">
+                    <div class="applications-grid">
+                        <div class="application-item">
+                            <i class="fas fa-folder-tree"></i>
+                            <h4>File Systems</h4>
+                            <p>Organizing files and directories in hierarchical structure</p>
+                        </div>
+                        <div class="application-item">
+                            <i class="fas fa-users"></i>
+                            <h4>Directory Services</h4>
+                            <p>LDAP and Active Directory</p>
+                        </div>
+                        <div class="application-item">
+                            <i class="fas fa-network-wired"></i>
+                            <h4>Network Routing</h4>
+                            <p>Spanning tree protocols</p>
+                        </div>
+                        <div class="application-item">
+                            <i class="fas fa-sitemap"></i>
+                            <h4>Website Navigation</h4>
+                            <p>Website hierarchical structures</p>
+                        </div>
+                        <div class="application-item">
+                            <i class="fas fa-users-cog"></i>
+                            <h4>Organizational Charts</h4>
+                            <p>Company structure and hierarchy</p>
+                        </div>
+                        <div class="application-item">
+                            <i class="fas fa-database"></i>
+                            <h4>Database Indexes</h4>
+                            <p>B-trees and other index structures</p>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
             <div class="modal-section">
-                <h3>Using This Simulator</h3>
-                <p>This interactive simulator allows you to:</p>
-                <ul>
-                    <li>Create and modify a tree structure</li>
-                    <li>Toggle nodes on/off to simulate network failures</li>
-                    <li>Simulate message routing between nodes to understand path selection</li>
-                    <li>Explore the impact of node failures on connectivity</li>
-                    <li>View statistics about your tree structure</li>
-                </ul>
-                <p>To get started, create a root node and begin building your network.</p>
+                <h3><i class="fas fa-play-circle"></i> Using This Simulator</h3>
+                <div class="section-content">
+                    <p>This interactive simulator allows you to create, visualize, and understand tree topology networks.</p>
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon"><i class="fas fa-edit"></i></div>
+                            <div class="feature-text">Create and modify a tree structure</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><i class="fas fa-power-off"></i></div>
+                            <div class="feature-text">Toggle nodes on/off to simulate network failures</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><i class="fas fa-exchange-alt"></i></div>
+                            <div class="feature-text">Simulate message routing between nodes</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><i class="fas fa-exclamation-circle"></i></div>
+                            <div class="feature-text">Explore the impact of node failures on connectivity</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+                            <div class="feature-text">View detailed statistics about your tree structure</div>
+                        </div>
+                    </div>
+                    <div class="start-instructions">
+                        <i class="fas fa-arrow-circle-right"></i>
+                        <p>To get started, create a root node and begin building your network.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
