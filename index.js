@@ -1590,3 +1590,4 @@ document.addEventListener('DOMContentLoaded', function() {
     simulateBtn.innerHTML = '<i class="fas fa-play"></i>&nbsp; Simulate Message';
     stopSimulationBtn.innerHTML = '<i class="fas fa-stop"></i>&nbsp; Stop Simulation';
 });
+
