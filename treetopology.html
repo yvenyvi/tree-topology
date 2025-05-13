@@ -5,42 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Tree Topology Network Simulator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app-container">
-        <div id="control-panel">
-            <div class="panel-section">
-                <button id="add-root-btn">Add Root Node</button>
-                <button id="expand-all-btn" disabled>Expand All</button>
-                <button id="collapse-all-btn" disabled>Collapse All</button>
-                <button id="reset-tree-btn" disabled>Reset Tree</button>
-                <button id="toggle-stats-btn">Toggle Statistics</button>
-                <button id="toggle-dark-mode-btn">Toggle Dark Mode</button>
-            </div>
-            <div class="simulation-controls">
-                <span>Simulation:</span>
-                <select id="source-node-select" disabled>
-                    <option value="">Select source node</option>
-                </select>
-                <select id="target-node-select" disabled>
-                    <option value="">Select target node</option>
-                </select>
-                <button id="simulate-btn" disabled>Simulate Message</button>
-                <button id="stop-simulation-btn" disabled>Stop Sending Message</button>
-                <button id="export-btn" disabled>Export Tree</button>
-                <button id="import-btn">Import Tree</button>
-                <input type="file" id="import-file" accept=".json" style="display: none;">
-            </div>
-        </div>
-        
         <div id="main-area">
+            <div id="left-sidebar">
+                <div class="sidebar-header">
+                    <h1 class="app-title">Interactive Tree Topology Network Simulator</h1>
+                </div>
+                
+                <div class="sidebar-content">
+                    <div class="sidebar-section">
+                        <h3><i class="fas fa-info-circle"></i> Learn</h3>
+                        <button id="info-btn"><i class="fas fa-book"></i> About Tree Topology</button>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h3><i class="fas fa-project-diagram"></i> Tree Controls</h3>
+                        <button id="add-root-btn"><i class="fas fa-plus-circle"></i> Add Root Node</button>
+                        <button id="expand-all-btn" disabled><i class="fas fa-expand-arrows-alt"></i> Expand All</button>
+                        <button id="collapse-all-btn" disabled><i class="fas fa-compress-arrows-alt"></i> Collapse All</button>
+                        <button id="reset-tree-btn" disabled><i class="fas fa-trash-alt"></i> Reset Tree</button>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3><i class="fas fa-play-circle"></i> Simulation</h3>
+                        <div class="form-group">
+                            <label for="source-node-select">Source:</label>
+                            <select id="source-node-select" disabled>
+                                <option value="">Select source node</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="target-node-select">Target:</label>
+                            <select id="target-node-select" disabled>
+                                <option value="">Select target node</option>
+                            </select>
+                        </div>
+                        <button id="simulate-btn" disabled><i class="fas fa-play"></i> Simulate Message</button>
+                        <button id="stop-simulation-btn" disabled><i class="fas fa-stop"></i> Stop Simulation</button>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3><i class="fas fa-cog"></i> Options</h3>
+                        <button id="toggle-stats-btn"><i class="fas fa-chart-bar"></i> Toggle Statistics</button>
+                        <button id="toggle-dark-mode-btn"><i class="fas fa-moon"></i> Toggle Dark Mode</button>
+                        <button id="export-btn" disabled><i class="fas fa-file-export"></i> Export Tree</button>
+                        <button id="import-btn"><i class="fas fa-file-import"></i> Import Tree</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
             <div id="tree-container">
                 <svg id="tree-svg" width="100%" height="100%">
                     <g id="zoom-layer"></g>
                 </svg>
                 <div id="tooltip" class="tooltip"></div>
-                <div id="center-message" class="center-message"></div>
                 <div id="simulation-legend" class="simulation-legend">
                     <h4>Message Simulation</h4>
                     <div class="legend-item">
@@ -57,11 +82,11 @@
                     </div>
                 </div>
                 <div id="context-menu" class="context-menu">
-                    <div class="context-menu-item" id="add-child-menu">Add Child Node</div>
-                    <div class="context-menu-item" id="rename-node-menu">Rename Node</div>
-                    <div class="context-menu-item" id="toggle-node-menu">Toggle ON/OFF</div>
-                    <div class="context-menu-item" id="toggle-collapse-menu">Expand/Collapse</div>
-                    <div class="context-menu-item" id="delete-node-menu">Delete Node</div>
+                    <div class="context-menu-item" id="add-child-menu"><i class="fas fa-plus"></i> Add Child Node</div>
+                    <div class="context-menu-item" id="rename-node-menu"><i class="fas fa-edit"></i> Rename Node</div>
+                    <div class="context-menu-item" id="toggle-node-menu"><i class="fas fa-power-off"></i> Toggle ON/OFF</div>
+                    <div class="context-menu-item" id="toggle-collapse-menu"><i class="fas fa-compress"></i> Expand/Collapse</div>
+                    <div class="context-menu-item" id="delete-node-menu"><i class="fas fa-trash"></i> Delete Node</div>
                 </div>
             </div>
             
@@ -70,10 +95,79 @@
                 <div id="tree-stats">
                     <p>No tree data available</p>
                 </div>
+                
                 <div id="path-info" style="display: none;">
                     <h3>Path Information</h3>
                     <div id="path-stats"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Modal Dialog -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Understanding Tree Topology</h2>
+            <div class="modal-section">
+                <h3>What is Tree Topology?</h3>
+                <p>A tree topology is a hierarchical network structure in which components are arranged like the branches of a tree. It starts from a root node at the top and branches out into multiple levels of child nodes.</p>
+                <div class="image-container">
+                    <img src="assets/tree-topology.png" alt="Tree Topology Illustration" class="concept-image">
+                </div>
+            </div>
+            <div class="modal-section">
+                <h3>Key Terminology</h3>
+                <ul>
+                    <li><strong>Root Node:</strong> The top-level node in the hierarchy that serves as the central point of the tree.</li>
+                    <li><strong>Parent Node:</strong> A node that has one or more child nodes connected below it.</li>
+                    <li><strong>Child Node:</strong> A node connected to a parent node above it.</li>
+                    <li><strong>Leaf Node:</strong> A node at the edge of the tree with no children.</li>
+                    <li><strong>Branch:</strong> A transmission path connecting different nodes.</li>
+                    <li><strong>Depth/Level:</strong> The distance from the root to a particular node.</li>
+                </ul>
+            </div>
+            <div class="modal-section">
+                <h3>Advantages</h3>
+                <ul>
+                    <li>Scalable - Easy to expand by adding more nodes</li>
+                    <li>Manageable - Simple hierarchical structure</li>
+                    <li>Efficient - No loops or collisions in data transmission</li>
+                    <li>Centralized administration from the root node</li>
+                    <li>Good for networks with clear hierarchies</li>
+                </ul>
+            </div>
+            <div class="modal-section">
+                <h3>Disadvantages</h3>
+                <ul>
+                    <li>Single point of failure - If the root node fails, the entire network below it fails</li>
+                    <li>Limited redundancy - Single paths between nodes</li>
+                    <li>Performance bottlenecks can occur at higher levels</li>
+                    <li>Limited scalability in depth (affects performance)</li>
+                </ul>
+            </div>
+            <div class="modal-section">
+                <h3>Real-World Applications</h3>
+                <ul>
+                    <li>File systems organization</li>
+                    <li>Directory services (like LDAP and Active Directory)</li>
+                    <li>Network routing (spanning tree protocols)</li>
+                    <li>Website navigation structures</li>
+                    <li>Organizational hierarchies</li>
+                    <li>Database index structures (B-trees)</li>
+                </ul>
+            </div>
+            <div class="modal-section">
+                <h3>Using This Simulator</h3>
+                <p>This interactive simulator allows you to:</p>
+                <ul>
+                    <li>Create and modify a tree structure</li>
+                    <li>Toggle nodes on/off to simulate network failures</li>
+                    <li>Simulate message routing between nodes to understand path selection</li>
+                    <li>Explore the impact of node failures on connectivity</li>
+                    <li>View statistics about your tree structure</li>
+                </ul>
+                <p>To get started, create a root node and begin building your network.</p>
             </div>
         </div>
     </div>
@@ -93,11 +187,13 @@
             <span id="state-label" style="margin-left: 8px;">ON</span>
         </div>
         <div class="dialog-buttons">
-            <button id="dialog-cancel">Cancel</button>
-            <button id="dialog-confirm">Confirm</button>
+            <button id="dialog-cancel"><i class="fas fa-times"></i> Cancel</button>
+            <button id="dialog-confirm"><i class="fas fa-check"></i> Confirm</button>
         </div>
     </div>
 
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
     <script src="index.js"></script>
 </body>
 </html>

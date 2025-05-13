@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const pathInfo = document.getElementById('path-info');
     const importFileInput = document.getElementById('import-file');
     const simulationLegend = document.getElementById('simulation-legend');
+    const infoModal = document.getElementById('info-modal');
+    const closeModalBtn = document.querySelector('.close-modal');
 
     // Control Buttons
     const addRootBtn = document.getElementById('add-root-btn');
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const importBtn = document.getElementById('import-btn');
     const sourceNodeSelect = document.getElementById('source-node-select');
     const targetNodeSelect = document.getElementById('target-node-select');
+    const infoBtn = document.getElementById('info-btn');
 
     // Dialog Elements
     const dialogTitle = document.getElementById('dialog-title');
@@ -131,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function deleteNode(nodeToDelete) {
         // Cannot delete the root
         if (!nodeToDelete.parent) {
-            showCenterMessage("Cannot delete the root node", "error");
+            showNotification("Cannot delete the root node", "error");
             return;
         }
         
@@ -249,8 +252,9 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTree();
             updateNodeSelects();
             enableButtons();
+            showNotification("Tree data imported successfully", "success", 2000);
         } catch (error) {
-            showCenterMessage("Error importing data: " + error.message, "error");
+            showNotification("Error importing data: " + error.message, "error", 5000);
         }
     }
 
@@ -463,14 +467,68 @@ document.addEventListener('DOMContentLoaded', function() {
         tooltip.style.opacity = 0;
     }
 
-    // Show a center message
-    function showCenterMessage(message, duration = 3000) {
-        centerMessage.textContent = message;
-        centerMessage.style.display = 'block';
+    // Show an alert or notification message
+    function showNotification(message, type = 'info', duration = 3000) {
+        // Configure SweetAlert2 based on message type
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: duration,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        let icon = 'info';
+        let background = '#3498db';
         
-        setTimeout(() => {
-            centerMessage.style.display = 'none';
-        }, duration);
+        switch (type) {
+            case 'success':
+                icon = 'success';
+                background = '#2ecc71';
+                break;
+            case 'error':
+                icon = 'error';
+                background = '#e74c3c';
+                break;
+            case 'warning':
+                icon = 'warning';
+                background = '#f39c12';
+                break;
+            case 'info':
+            default:
+                icon = 'info';
+                background = '#3498db';
+                break;
+        }
+        
+        // For short duration simple messages, use toast style
+        if (duration <= 3000 && message.length < 50) {
+            Toast.fire({
+                icon: icon,
+                title: message,
+                background: background,
+                color: '#fff'
+            });
+        } else {
+            // For longer or more important messages, use modal style but position at top
+            Swal.fire({
+                icon: icon,
+                title: type.charAt(0).toUpperCase() + type.slice(1),
+                text: message,
+                timer: duration,
+                timerProgressBar: true,
+                showConfirmButton: duration > 5000,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+                position: 'top',
+                width: 'auto',
+                padding: '1em'
+            });
+        }
     }
 
     // Update tree statistics
@@ -559,46 +617,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Find path between two nodes
     function findPath(sourceNode, targetNode) {
-        // Find lowest common ancestor
-        const sourcePath = [];
-        const targetPath = [];
+        // If source and target are the same, return just the node
+        if (sourceNode === targetNode) {
+            return [sourceNode];
+        }
         
+        // Find lowest common ancestor (LCA)
+        let sourcePath = [];
+        let targetPath = [];
+        
+        // Create path from source to root
         let current = sourceNode;
         while (current) {
-            sourcePath.unshift(current);
+            sourcePath.push(current);
             current = current.parent;
         }
         
+        // Create path from target to root
         current = targetNode;
         while (current) {
-            targetPath.unshift(current);
+            targetPath.push(current);
             current = current.parent;
         }
         
+        // Reverse the source path so both paths go from root to node
+        sourcePath.reverse();
+        targetPath.reverse();
+        
         // Find the lowest common ancestor
-        let i = 0;
-        while (i < sourcePath.length && i < targetPath.length && 
-               sourcePath[i] === targetPath[i]) {
-            i++;
+        let commonIndex = 0;
+        while (commonIndex < sourcePath.length && 
+               commonIndex < targetPath.length && 
+               sourcePath[commonIndex] === targetPath[commonIndex]) {
+            commonIndex++;
         }
         
-        // Build the full path
-        const commonAncestor = i > 0 ? sourcePath[i - 1] : null;
-        if (!commonAncestor) return null;
+        // The common ancestor is the last matching node
+        const commonAncestorIndex = commonIndex - 1;
+        if (commonAncestorIndex < 0) return null; // No common ancestor
         
-        const fullPath = [];
+        // Build the complete path:
+        // 1. From source to common ancestor (backwards)
+        // 2. From common ancestor to target (forwards)
+        const path = [];
         
-        // Add path from source to common ancestor (backwards)
-        for (let j = sourcePath.length - 1; j >= i - 1; j--) {
-            fullPath.push(sourcePath[j]);
+        // Add nodes from source to the node before common ancestor (in reverse)
+        for (let i = 0; i < sourcePath.length - commonIndex; i++) {
+            path.push(sourcePath[sourcePath.length - 1 - i]);
         }
         
-        // Add path from common ancestor to target (forwards, skipping the common ancestor)
-        for (let j = i; j < targetPath.length; j++) {
-            fullPath.push(targetPath[j]);
+        // Add common ancestor if not already in path
+        if (path.length === 0 || path[path.length - 1] !== sourcePath[commonAncestorIndex]) {
+            path.push(sourcePath[commonAncestorIndex]);
         }
         
-        return fullPath;
+        // Add nodes from after common ancestor to target
+        for (let i = commonAncestorIndex + 1; i < targetPath.length; i++) {
+            path.push(targetPath[i]);
+        }
+        
+        return path;
     }
 
     // Update node select dropdowns
@@ -769,12 +847,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function simulateMessage() {
         if (!selectedSource || !selectedTarget || isSimulating) return;
         
+        // Reset the stop flag
+        stopSimulation = false;
+        
         // Find the source and target nodes
         const sourceNode = findNodeById(selectedSource);
         const targetNode = findNodeById(selectedTarget);
         
         if (!sourceNode || !targetNode) {
-            showCenterMessage("Invalid source or target node");
+            showNotification("Invalid source or target node", "error");
             return;
         }
         
@@ -782,9 +863,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const path = findPath(sourceNode, targetNode);
         
         if (!path) {
-            showCenterMessage("Could not find a path between the selected nodes");
+            showNotification("Could not find a path between the selected nodes", "error");
             return;
         }
+        
+        // For debugging - log the path
+        console.log("Path:", path.map(node => node.data.name));
         
         // Check if all nodes in the path are ON
         let allNodesOn = true;
@@ -801,12 +885,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset any previous highlights
         d3.selectAll('.link').classed('highlight', false);
         
-        // Highlight the path
+        // Highlight the path in the correct direction from source to target
         for (let i = 0; i < path.length - 1; i++) {
-            const linkId = `link-${path[i].data.id}-${path[i + 1].data.id}` || 
-                          `link-${path[i + 1].data.id}-${path[i].data.id}`;
-            d3.select(`#${linkId}`).classed('highlight', true);
+            const source = path[i];
+            const target = path[i + 1];
+            
+            // Create a unique ID for the link
+            const linkId1 = `link-${source.data.id}-${target.data.id}`;
+            const linkId2 = `link-${target.data.id}-${source.data.id}`;
+            
+            // Try to select the link with either ID
+            const link1 = d3.select(`#${linkId1}`);
+            const link2 = d3.select(`#${linkId2}`);
+            
+            // Highlight whichever link exists
+            if (!link1.empty()) {
+                link1.classed('highlight', true);
+            } else if (!link2.empty()) {
+                link2.classed('highlight', true);
+            }
         }
+        
+        // Create a more user-friendly representation of the path
+        const pathDisplay = path.map(n => n.data.name).join(' → ');
         
         // Display path information
         const hops = path.length - 1;
@@ -819,93 +920,304 @@ document.addEventListener('DOMContentLoaded', function() {
             <div><strong>Number of Hops:</strong> ${hops}</div>
             <div><strong>Total Latency:</strong> ${totalLatency}ms</div>
             <div><strong>Status:</strong> ${allNodesOn ? 
-                '<span style="color: #4CAF50">✓ Path available</span>' : 
-                `<span style="color: #F44336">✗ Path interrupted at ${path[offNodeIndex].data.name} (OFF)</span>`}
+                '<span style="color: var(--success-color)">✓ Path available</span>' : 
+                `<span style="color: var(--error-color)">✗ Path interrupted at ${path[offNodeIndex].data.name} (OFF)</span>`}
             </div>
-            <div><strong>Path:</strong> ${path.map(n => n.data.name).join(' → ')}</div>
+            <div><strong>Path:</strong> ${pathDisplay}</div>
         `;
         
         document.getElementById('path-stats').innerHTML = pathStatsHTML;
         pathInfo.style.display = 'block';
         
-        // Animate the message packet along the path
+        // Set simulation mode
         isSimulating = true;
+        simulateBtn.disabled = true;
+        stopSimulationBtn.disabled = false;
+        
+        // Show simulation start notification
+        showNotification(`Starting simulation: ${sourceNode.data.name} → ${targetNode.data.name}`, "info", 1500);
+        
+        // Reset stop button handler
+        stopSimulationBtn.onclick = () => {
+            // Set the stop flag for the animation
+            stopSimulation = true;
+            
+            // Stop any ongoing animations
+            d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
+            d3.selectAll('.node circle').classed('receiving-message', false);
+            isSimulating = false;
+            simulateBtn.disabled = false;
+            stopSimulationBtn.disabled = true;
+            showNotification("Simulation stopped", "warning", 1000);
+        };
+        
+        // Animate the message packet along the path
         animateMessagePacket(path, allNodesOn, offNodeIndex);
     }
 
     // Animate a message packet along a path
     function animateMessagePacket(path, allNodesOn, offNodeIndex) {
-        // Create a message packet (circle)
-        const packet = d3.select(zoomLayer).append('circle')
+        // Create a message packet (circle) and its glow effect
+        const packetGroup = d3.select(zoomLayer).append('g')
+            .attr('class', 'message-packet-group');
+            
+        packetGroup.append('circle')
+            .attr('class', 'message-packet-glow')
+            .attr('r', 10);
+            
+        packetGroup.append('circle')
             .attr('class', 'message-packet')
             .attr('r', 6);
         
-        // Animation duration between each node
-        const stepDuration = 500; // ms
+        // Set initial position at the source node
+        const startNode = path[0];
+        packetGroup.attr('transform', `translate(${startNode.y},${startNode.x})`);
         
-        // Create animation keyframes
-        let keyframes = [];
+        // Animation duration between each node (slower for better visualization)
+        const stepDuration = 1200; // ms
         
-        for (let i = 0; i < path.length - 1; i++) {
-            // If we've reached an OFF node, stop animation
-            if (!allNodesOn && i >= offNodeIndex) break;
-            
+        // Determine the last valid node index
+        let lastValidIndex = path.length - 1;
+        
+        // If there's an OFF node in the path, stop at that node
+        if (!allNodesOn && offNodeIndex > -1) {
+            lastValidIndex = offNodeIndex;
+        }
+        
+        // Create path segments for animation
+        const pathSegments = [];
+        
+        // Build segments from node to node following the curved links
+        for (let i = 0; i < lastValidIndex; i++) {
             const source = path[i];
             const target = path[i + 1];
             
-            keyframes.push({
-                position: [source.y, source.x],
-                duration: i === 0 ? 0 : stepDuration // First position is immediate
-            });
+            // Debug info
+            console.log(`Segment ${i}: ${source.data.name} -> ${target.data.name}`);
             
-            keyframes.push({
-                position: [target.y, target.x],
-                duration: stepDuration
-            });
+            // Try both possible link IDs since the link might be in either direction
+            const linkId1 = `link-${source.data.id}-${target.data.id}`;
+            const linkId2 = `link-${target.data.id}-${source.data.id}`;
+            
+            // Find the actual path element
+            let linkElement = document.getElementById(linkId1);
+            let isReversed = false;
+            
+            if (!linkElement) {
+                linkElement = document.getElementById(linkId2);
+                isReversed = true;
+            }
+            
+            if (linkElement) {
+                pathSegments.push({
+                    source: source,
+                    target: target,
+                    path: linkElement,
+                    length: linkElement.getTotalLength(),
+                    isReversed: isReversed
+                });
+            } else {
+                // Fallback if link element not found - direct line
+                pathSegments.push({
+                    source: source,
+                    target: target,
+                    path: null,
+                    length: Math.sqrt(
+                        Math.pow(target.y - source.y, 2) + 
+                        Math.pow(target.x - source.x, 2)
+                    ),
+                    isReversed: false
+                });
+            }
         }
         
-        // If path is broken, add the final OFF node
-        if (!allNodesOn) {
-            keyframes.push({
-                position: [path[offNodeIndex].y, path[offNodeIndex].x],
-                duration: stepDuration
-            });
+        // Active node highlighting during animation
+        function highlightCurrentNode(index) {
+            // Reset all nodes to normal
+            d3.selectAll('.node circle').classed('receiving-message', false);
+            
+            // Highlight the current node
+            if (index >= 0 && index < path.length) {
+                d3.select(`#node-${path[index].data.id} circle`).classed('receiving-message', true);
+            }
         }
         
-        // Function to animate through keyframes
-        function animate(index) {
-            if (index >= keyframes.length) {
-                // Animation complete
-                setTimeout(() => {
-                    packet.remove();
-                    isSimulating = false;
+        // Function to animate along the path
+        function animateAlongPath(segmentIndex) {
+            // If stop flag is set, end animation
+            if (stopSimulation) {
+                // Clean up
+                packetGroup.remove();
+                d3.selectAll('.node circle').classed('receiving-message', false);
+                return;
+            }
+            
+            // If we've reached the end of the path segments
+            if (segmentIndex >= pathSegments.length) {
+                // For an OFF node, we stop there
+                if (!allNodesOn) {
+                    // Remove the packet and node highlighting
+                    packetGroup.remove();
+                    d3.selectAll('.node circle').classed('receiving-message', false);
                     
-                    // Show completion message
-                    showCenterMessage(allNodesOn ? 
-                        "Message delivered successfully!" : 
-                        `Message failed at ${path[offNodeIndex].data.name} (OFF)`,
-                        2000);
+                    // Show failure message
+                    showNotification(`Message failed at ${path[offNodeIndex].data.name} (OFF)`, "error", 2000);
+                    
+                    // End the simulation
+                    isSimulating = false;
+                    simulateBtn.disabled = false;
+                    stopSimulationBtn.disabled = true;
                     
                     // Remove path highlights after a delay
                     setTimeout(() => {
                         d3.selectAll('.link').classed('highlight', false);
                     }, 3000);
                     
+                    return;
+                }
+                
+                // For functioning paths, loop back to start for continuous animation
+                // Small pause before starting again
+                setTimeout(() => {
+                    // Reset to source node position
+                    packetGroup.attr('transform', `translate(${startNode.y},${startNode.x})`);
+                    
+                    // Briefly show success message and then restart animation
+                    showNotification(`Message delivered from ${path[0].data.name} to ${path[path.length-1].data.name}`, "success", 1000);
+                    
+                    // Start over from the first segment
+                    setTimeout(() => {
+                        if (isSimulating) { // Only restart if still simulating
+                            animateAlongPath(0);
+                        }
                 }, 500);
+                }, 500);
+                
                 return;
             }
             
-            const frame = keyframes[index];
+            const segment = pathSegments[segmentIndex];
+            const segmentDuration = stepDuration * (segment.length / 100); // Adjust timing based on length
             
-            packet.transition()
-                .duration(frame.duration)
-                .attr('cx', frame.position[0])
-                .attr('cy', frame.position[1])
-                .on('end', () => animate(index + 1));
+            // Highlight the source node
+            highlightCurrentNode(segmentIndex);
+            
+            if (segment.path) {
+                // Animate along the SVG path
+                const pathLength = segment.path.getTotalLength();
+                
+                // Create interpolator for points along the path, respecting direction
+                const pointInterpolator = function(t) {
+                    // If the path is reversed, we need to animate from end to start
+                    const point = segment.isReversed 
+                        ? segment.path.getPointAtLength((1 - t) * pathLength)
+                        : segment.path.getPointAtLength(t * pathLength);
+                    return `translate(${point.x}, ${point.y})`;
+                };
+                
+                // Create evenly spaced points along the path for trail effect
+                const trailPoints = [];
+                const numTrailPoints = 10;
+                
+                for (let i = 0; i <= numTrailPoints; i++) {
+                    // If the path is reversed, we need points from end to start
+                    const pathPosition = segment.isReversed 
+                        ? (1 - i / numTrailPoints) * pathLength
+                        : (i / numTrailPoints) * pathLength;
+                    trailPoints.push(segment.path.getPointAtLength(pathPosition));
+                }
+                
+                // Animate packet along the curved path
+                packetGroup.transition()
+                    .duration(segmentDuration)
+                    .attrTween("transform", () => t => pointInterpolator(t))
+                    .on("end", () => {
+                        // Move to next segment
+                        animateAlongPath(segmentIndex + 1);
+                    });
+                
+                // Add trail effect at intervals
+                for (let i = 1; i < trailPoints.length; i++) {
+                    setTimeout(() => {
+                        if (!isSimulating) return; // Skip if simulation stopped
+                        
+                        d3.select(zoomLayer).append('circle')
+                            .attr('class', 'message-packet-trail')
+                            .attr('r', 3)
+                            .attr('cx', trailPoints[i].x)
+                            .attr('cy', trailPoints[i].y)
+                            .transition()
+                            .duration(1500)
+                            .style('opacity', 0)
+                            .remove();
+                    }, segmentDuration * (i / trailPoints.length));
+                }
+            } else {
+                // Fallback for direct line if path element not found
+                packetGroup.transition()
+                    .duration(segmentDuration)
+                    .attr('transform', `translate(${segment.target.y},${segment.target.x})`)
+                    .on("end", () => {
+                        // Move to next segment
+                        animateAlongPath(segmentIndex + 1);
+                    });
+                
+                // Add trail effect
+                const sourcePoint = { x: segment.source.x, y: segment.source.y };
+                const targetPoint = { x: segment.target.x, y: segment.target.y };
+                
+                for (let i = 1; i <= 5; i++) {
+                    setTimeout(() => {
+                        if (!isSimulating) return; // Skip if simulation stopped
+                        
+                        const t = i / 5;
+                        const x = sourcePoint.x + (targetPoint.x - sourcePoint.x) * t;
+                        const y = sourcePoint.y + (targetPoint.y - sourcePoint.y) * t;
+                        
+                        d3.select(zoomLayer).append('circle')
+                            .attr('class', 'message-packet-trail')
+                            .attr('r', 3)
+                            .attr('cx', y) // x and y are swapped in d3.tree layout
+                            .attr('cy', x)
+                            .transition()
+                            .duration(1500)
+                            .style('opacity', 0)
+                            .remove();
+                    }, segmentDuration * (i / 5));
+                }
+            }
         }
         
-        // Start the animation
-        animate(0);
+        // Start the animation with the first segment
+        animateAlongPath(0);
+        
+        // Make stop button active
+        stopSimulationBtn.disabled = false;
+        stopSimulationBtn.onclick = () => {
+            // Set the stop flag for the animation
+            stopSimulation = true;
+            
+            // Stop any ongoing animations
+            d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
+            d3.selectAll('.node circle').classed('receiving-message', false);
+            isSimulating = false;
+            simulateBtn.disabled = false;
+            stopSimulationBtn.disabled = true;
+            showNotification("Simulation stopped", "warning", 1000);
+        };
+    }
+
+    // ========================
+    // Information & Help Functions
+    // ========================
+    // Show the information modal
+    function showInfoModal() {
+        infoModal.style.display = 'block';
+    }
+
+    // Hide the information modal
+    function hideInfoModal() {
+        infoModal.style.display = 'none';
     }
 
     // ========================
@@ -924,6 +1236,19 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
     });
     
+    // Information button listener
+    infoBtn.addEventListener('click', showInfoModal);
+    
+    // Modal close button
+    closeModalBtn.addEventListener('click', hideInfoModal);
+    
+    // Close modal when clicking outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === infoModal) {
+            hideInfoModal();
+        }
+    });
+    
     // Button click handlers
     addRootBtn.addEventListener('click', () => {
         if (!treeData) {
@@ -933,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             centerTree();
             enableButtons();
         } else {
-            showCenterMessage("Root node already exists");
+            showNotification("Root node already exists");
         }
     });
     
@@ -1024,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentNode && currentNode.parent) {
             deleteNode(currentNode);
         } else if (currentNode) {
-            showCenterMessage("Cannot delete the root node");
+            showNotification("Cannot delete the root node");
         }
         contextMenu.style.display = 'none';
     });
@@ -1143,7 +1468,7 @@ document.addEventListener('DOMContentLoaded', function() {
         targetNodeSelect.title = "Target node selection unavailable - No tree exists";
         
         // Show a helpful message in the center of the screen
-        showCenterMessage("Create or import a tree to begin", 3000);
+        showNotification("Create or import a tree to begin", "info", 3000);
     }
     
     // ========================
@@ -1228,4 +1553,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize with a sample tree
     generateSampleTree();
+
+    // Update the simulation buttons to ensure text renders correctly with icons
+    simulateBtn.innerHTML = '<i class="fas fa-play"></i>&nbsp; Simulate Message';
+    stopSimulationBtn.innerHTML = '<i class="fas fa-stop"></i>&nbsp; Stop Simulation';
 });
