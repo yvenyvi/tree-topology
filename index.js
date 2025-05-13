@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const pathInfo = document.getElementById('path-info');
     const importFileInput = document.getElementById('import-file');
     const simulationLegend = document.getElementById('simulation-legend');
+    const simulationNotification = document.getElementById('simulation-notification');
     const infoModal = document.getElementById('info-modal');
     const closeModalBtn = document.querySelector('.close-modal');
 
@@ -472,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show an alert or notification message
-    function showNotification(message, type = 'info', duration = 3000) {
+    function showNotification(message, type = 'info', duration = 2000) {
         // Configure SweetAlert2 based on message type
         const Toast = Swal.mixin({
             toast: true,
@@ -538,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update tree statistics
     function updateTreeStats() {
         if (!root) {
-            document.getElementById('tree-stats').innerHTML = '<p>No tree data available</p>';
+            document.getElementById('tree-stats').innerHTML = '<div class="stats-summary">No tree data available. Create a root node to begin.</div>';
             return;
         }
         
@@ -548,6 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let nodesOn = 0;
         let nodesOff = 0;
         let reachableLeafNodes = 0;
+        let leafNodes = 0;
         
         root.eachBefore(node => {
             totalNodes++;
@@ -559,9 +561,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 nodesOff++;
             }
             
+            // Count leaf nodes (nodes with no children)
+            if (!node.children && !node._children) {
+                leafNodes++;
             // Check if it's a reachable leaf node
-            if (isNodeReachable(node) && !node.children && !node._children) {
+                if (isNodeReachable(node)) {
                 reachableLeafNodes++;
+                }
             }
         });
         
@@ -585,19 +591,87 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Update the stats panel
+        // Calculate percentages for progress bars
+        const nodesOnPercent = Math.round((nodesOn / totalNodes) * 100);
+        const nodesOffPercent = Math.round((nodesOff / totalNodes) * 100);
+        const reachableLeafPercent = leafNodes > 0 ? Math.round((reachableLeafNodes / leafNodes) * 100) : 0;
+        
+        // Update the stats panel with enhanced styling
         const statsHTML = `
-            <div><strong>Total Nodes:</strong> ${totalNodes}</div>
-            <div><strong>Maximum Depth:</strong> ${maxDepth}</div>
-            <div><strong>Nodes ON:</strong> ${nodesOn}</div>
-            <div><strong>Nodes OFF:</strong> ${nodesOff}</div>
-            <div><strong>Reachable Leaf Nodes:</strong> ${reachableLeafNodes}</div>
-            ${longestPathPair ? 
-                `<div><strong>Longest Path:</strong> ${longestPath - 1} hops<br/>${longestPathPair[0]} ↔ ${longestPathPair[1]}</div>` : 
-                '<div><strong>Longest Path:</strong> N/A</div>'}
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-network-wired"></i> Total Nodes</div>
+                <div class="stat-value">${totalNodes}</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-sitemap"></i> Maximum Depth</div>
+                <div class="stat-value">${maxDepth}</div>
+                <div class="stats-summary">Tree height from root to deepest node</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">
+                    <i class="fas fa-power-off"></i> Node Status
+                    <span class="stat-badge badge-on">${nodesOn} ON</span>
+                    <span class="stat-badge badge-off">${nodesOff} OFF</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar progress-on" style="width: ${nodesOnPercent}%"></div>
+                </div>
+                <div class="progress-container" style="margin-top: 2px;">
+                    <div class="progress-bar progress-off" style="width: ${nodesOffPercent}%"></div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-leaf"></i> Leaf Nodes</div>
+                <div class="stat-value">${leafNodes} 
+                    <span style="font-size: 16px; color: var(--success-color);">(${reachableLeafNodes} reachable)</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar progress-on" style="width: ${reachableLeafPercent}%"></div>
+                </div>
+                <div class="stats-summary">${reachableLeafPercent}% of leaf nodes are reachable</div>
+            </div>
+            
+            ${longestPathPair ? `
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-route"></i> Longest Path</div>
+                <div class="stat-value">${longestPath - 1} <span style="font-size: 16px;">hops</span></div>
+                <div class="longest-path">
+                    <i class="fas fa-arrow-right"></i>
+                    <span class="longest-path-endpoints">${longestPathPair[0]} ↔ ${longestPathPair[1]}</span>
+                </div>
+            </div>
+            ` : `
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-route"></i> Longest Path</div>
+                <div class="stat-value">N/A</div>
+                <div class="stats-summary">Add more nodes to see path information</div>
+            </div>
+            `}
+            
+            <div class="stats-summary">
+                <i class="fas fa-info-circle"></i> ${getTreeHealth(nodesOnPercent, reachableLeafPercent)}
+            </div>
         `;
         
         document.getElementById('tree-stats').innerHTML = statsHTML;
+    }
+    
+    // Get tree health status message based on statistics
+    function getTreeHealth(nodesOnPercent, reachableLeafPercent) {
+        if (nodesOnPercent === 100) {
+            return "Network is fully operational with all nodes connected.";
+        } else if (nodesOnPercent >= 75) {
+            return "Network is operating well with most nodes online.";
+        } else if (nodesOnPercent >= 50) {
+            return "Network is partially operational with some nodes offline.";
+        } else if (reachableLeafPercent <= 25) {
+            return "Network has significant outages affecting most endpoints.";
+        } else {
+            return "Network has major outages with limited connectivity.";
+        }
     }
 
     // Check if a node is reachable from root
@@ -829,9 +903,9 @@ document.addEventListener('DOMContentLoaded', function() {
             nodeStateInput.disabled = true;
             stateLabel.textContent = 'OFF (Parent is OFF)';
         } else {
-            nodeStateInput.checked = true;
+        nodeStateInput.checked = true;
             nodeStateInput.disabled = false;
-            stateLabel.textContent = 'ON';
+        stateLabel.textContent = 'ON';
         }
         
         nodeDialog.dataset.mode = 'add';
@@ -852,9 +926,9 @@ document.addEventListener('DOMContentLoaded', function() {
             nodeStateInput.disabled = true;
             stateLabel.textContent = 'OFF (Parent is OFF)';
         } else {
-            nodeStateInput.checked = node.data.isOn;
+        nodeStateInput.checked = node.data.isOn;
             nodeStateInput.disabled = false;
-            stateLabel.textContent = node.data.isOn ? 'ON' : 'OFF';
+        stateLabel.textContent = node.data.isOn ? 'ON' : 'OFF';
         }
         
         nodeDialog.dataset.mode = 'rename';
@@ -929,24 +1003,60 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Create a more user-friendly representation of the path
-        const pathDisplay = path.map(n => n.data.name).join(' → ');
-        
         // Display path information
         const hops = path.length - 1;
         const latencyPerHop = 50; // ms
         const totalLatency = hops * latencyPerHop;
         
         const pathStatsHTML = `
-            <div><strong>Source:</strong> ${sourceNode.data.name}</div>
-            <div><strong>Destination:</strong> ${targetNode.data.name}</div>
-            <div><strong>Number of Hops:</strong> ${hops}</div>
-            <div><strong>Total Latency:</strong> ${totalLatency}ms</div>
-            <div><strong>Status:</strong> ${allNodesOn ? 
-                '<span style="color: var(--success-color)">✓ Path available</span>' : 
-                `<span style="color: var(--error-color)">✗ Path interrupted at ${path[offNodeIndex].data.name} (OFF)</span>`}
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-map-marker-alt"></i> Source & Destination</div>
+                <div class="path-item">
+                    <div class="path-icon"><i class="fas fa-play"></i></div>
+                    <div><strong>${sourceNode.data.name}</strong> (Source)</div>
             </div>
-            <div><strong>Path:</strong> ${pathDisplay}</div>
+                <div class="path-item">
+                    <div class="path-icon"><i class="fas fa-flag"></i></div>
+                    <div><strong>${targetNode.data.name}</strong> (Destination)</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-exchange-alt"></i> Path Details</div>
+                <div class="stat-value">${hops} <span style="font-size: 16px;">hops</span></div>
+                <div class="progress-container" style="margin-top: 8px; height: 12px;">
+                    ${Array(hops).fill().map((_, i) => 
+                        `<div class="progress-bar progress-on" style="width: ${100/hops}%; margin-right: 2px; 
+                         ${!allNodesOn && i >= offNodeIndex-1 ? 'background-color: var(--error-color);' : ''}"></div>`
+                    ).join('')}
+                </div>
+                <div class="stats-summary" style="margin-top: 10px;">
+                    <strong>Total Latency:</strong> ${totalLatency}ms
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">
+                    <i class="fas fa-${allNodesOn ? 'check-circle' : 'exclamation-circle'}"></i> 
+                    Status
+                </div>
+                <div style="color: ${allNodesOn ? 'var(--success-color)' : 'var(--error-color)'}; font-weight: 600; margin: 5px 0;">
+                    ${allNodesOn ? 
+                        '✓ Path available' : 
+                        `✗ Path interrupted at ${path[offNodeIndex].data.name} (OFF)`}
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-route"></i> Complete Path</div>
+                <div style="font-size: 14px; margin-top: 8px; overflow-wrap: break-word;">
+                    ${path.map((n, i) => 
+                        `<span style="color: ${!allNodesOn && i >= offNodeIndex ? 'var(--error-color)' : 'inherit'}; 
+                        ${i === 0 || i === path.length-1 ? 'font-weight: 600;' : ''}">
+                        ${n.data.name}</span>${i < path.length-1 ? ' → ' : ''}`
+                    ).join('')}
+                </div>
+            </div>
         `;
         
         document.getElementById('path-stats').innerHTML = pathStatsHTML;
@@ -957,8 +1067,9 @@ document.addEventListener('DOMContentLoaded', function() {
         simulateBtn.disabled = true;
         stopSimulationBtn.disabled = false;
         
-        // Show simulation start notification
-        showNotification(`Starting simulation: ${sourceNode.data.name} → ${targetNode.data.name}`, "info", 1500);
+        // Show simulation notification
+        showSimulationNotification(`Starting simulation: ${sourceNode.data.name} → ${targetNode.data.name}`, "info", 2000);
+        simulationLegend.style.opacity = '1';
         
         // Reset stop button handler
         stopSimulationBtn.onclick = () => {
@@ -968,10 +1079,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Stop any ongoing animations
             d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
             d3.selectAll('.node circle').classed('receiving-message', false);
+            d3.selectAll('.node circle').classed('message-delivered', false);
+            d3.selectAll('.link').classed('active-segment', false);
             isSimulating = false;
             simulateBtn.disabled = false;
             stopSimulationBtn.disabled = true;
-            showNotification("Simulation stopped", "warning", 1000);
+            showSimulationNotification("Simulation stopped", "error", 2000);
         };
         
         // Animate the message packet along the path
@@ -986,18 +1099,33 @@ document.addEventListener('DOMContentLoaded', function() {
             
         packetGroup.append('circle')
             .attr('class', 'message-packet-glow')
-            .attr('r', 10);
+            .attr('r', 16);
             
         packetGroup.append('circle')
             .attr('class', 'message-packet')
-            .attr('r', 6);
+            .attr('r', 8);
+        
+        // Add a pulse circle for extra effect
+        packetGroup.append('circle')
+            .attr('class', 'message-packet-pulse')
+            .attr('r', 0)
+            .attr('fill', 'rgba(255,255,255,0.7)')
+            .attr('opacity', 0.7)
+            .attr('stroke', 'var(--message-color)')
+            .attr('stroke-width', 2);
         
         // Set initial position at the source node
         const startNode = path[0];
         packetGroup.attr('transform', `translate(${startNode.y},${startNode.x})`);
         
+        // Show pulse effect at start node
+        d3.select(`#node-${startNode.data.id} circle`).classed('receiving-message', true);
+        
         // Animation duration between each node (slower for better visualization)
         const stepDuration = 1200; // ms
+        
+        // Create ripple effect at source
+        createRippleEffect(startNode.y, startNode.x);
         
         // Determine the last valid node index
         let lastValidIndex = path.length - 1;
@@ -1083,8 +1211,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     packetGroup.remove();
                     d3.selectAll('.node circle').classed('receiving-message', false);
                     
-                    // Show failure message
-                    showNotification(`Message failed at ${path[offNodeIndex].data.name} (OFF)`, "error", 2000);
+                    // Show failure notification
+                    showSimulationNotification(`Message failed at ${path[offNodeIndex].data.name} (OFF)`, "error", 2000);
                     
                     // End the simulation
                     isSimulating = false;
@@ -1094,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Remove path highlights after a delay
                     setTimeout(() => {
                         d3.selectAll('.link').classed('highlight', false);
-                    }, 3000);
+                    }, 2000);
                     
                     return;
                 }
@@ -1105,15 +1233,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Reset to source node position
                     packetGroup.attr('transform', `translate(${startNode.y},${startNode.x})`);
                     
-                    // Briefly show success message and then restart animation
-                    showNotification(`Message delivered from ${path[0].data.name} to ${path[path.length-1].data.name}`, "success", 1000);
+                    // Briefly show success notification and then restart animation
+                    showSimulationNotification(`Message delivered from ${path[0].data.name} to ${path[path.length-1].data.name}`, "success", 2000);
+                    
+                    // Add success effect to the target node
+                    const targetNode = path[path.length-1];
+                    d3.select(`#node-${targetNode.data.id} circle`).classed('receiving-message', false);
+                    d3.select(`#node-${targetNode.data.id} circle`).classed('message-delivered', true);
+                    
+                    // Create ripple effect at target
+                    createRippleEffect(targetNode.y, targetNode.x);
+                    
+                    // Remove success effect after a delay
+                    setTimeout(() => {
+                        d3.select(`#node-${targetNode.data.id} circle`).classed('message-delivered', false);
+                    }, 1000);
                     
                     // Start over from the first segment
                     setTimeout(() => {
                         if (isSimulating) { // Only restart if still simulating
                             animateAlongPath(0);
                         }
-                }, 500);
+                    }, 500);
                 }, 500);
                 
                 return;
@@ -1128,6 +1269,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (segment.path) {
                 // Animate along the SVG path
                 const pathLength = segment.path.getTotalLength();
+                
+                // Add extra highlight to current link segment
+                const segmentId = segment.path.id;
+                d3.select(`#${segmentId}`).classed('active-segment', true);
                 
                 // Create interpolator for points along the path, respecting direction
                 const pointInterpolator = function(t) {
@@ -1155,6 +1300,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     .duration(segmentDuration)
                     .attrTween("transform", () => t => pointInterpolator(t))
                     .on("end", () => {
+                        // Remove active segment highlight
+                        d3.select(`#${segmentId}`).classed('active-segment', false);
+                        
+                        // Create effect at the end of this segment
+                        createRippleEffect(segment.target.y, segment.target.x);
+                        
                         // Move to next segment
                         animateAlongPath(segmentIndex + 1);
                     });
@@ -1223,11 +1374,34 @@ document.addEventListener('DOMContentLoaded', function() {
             // Stop any ongoing animations
             d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
             d3.selectAll('.node circle').classed('receiving-message', false);
+            d3.selectAll('.node circle').classed('message-delivered', false);
+            d3.selectAll('.link').classed('active-segment', false);
             isSimulating = false;
             simulateBtn.disabled = false;
             stopSimulationBtn.disabled = true;
-            showNotification("Simulation stopped", "warning", 1000);
+            showSimulationNotification("Simulation stopped", "error", 2000);
         };
+    }
+
+    // Add this function for creating ripple effects at nodes
+    function createRippleEffect(x, y) {
+        const ripple = d3.select(zoomLayer).append('circle')
+            .attr('class', 'ripple-effect')
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('r', 5)
+            .attr('fill', 'none')
+            .attr('stroke', 'var(--highlight-color)')
+            .attr('stroke-width', 2)
+            .attr('opacity', 0.8);
+        
+        ripple.transition()
+            .duration(1500)
+            .attr('r', 40)
+            .attr('opacity', 0)
+            .on('end', function() {
+                ripple.remove();
+            });
     }
 
     // ========================
@@ -1589,5 +1763,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update the simulation buttons to ensure text renders correctly with icons
     simulateBtn.innerHTML = '<i class="fas fa-play"></i>&nbsp; Simulate Message';
     stopSimulationBtn.innerHTML = '<i class="fas fa-stop"></i>&nbsp; Stop Simulation';
+
+    // Show simulation notification
+    function showSimulationNotification(message, type = 'success', duration = 2000) {
+        // Clear any existing notification timeouts
+        if (window.notificationTimeout) {
+            clearTimeout(window.notificationTimeout);
+        }
+        
+        // Set notification type and message
+        simulationNotification.className = 'simulation-notification';
+        simulationNotification.classList.add(type);
+        
+        // Update content based on type
+        const notificationIcon = simulationNotification.querySelector('.notification-icon');
+        const notificationText = simulationNotification.querySelector('.notification-text');
+        const timerProgress = simulationNotification.querySelector('.notification-timer-progress');
+        
+        // Reset timer animation
+        timerProgress.classList.remove('animate');
+        
+        // Set icon and text based on type
+        if (type === 'success') {
+            notificationIcon.className = 'notification-icon fas fa-check-circle';
+        } else if (type === 'error') {
+            notificationIcon.className = 'notification-icon fas fa-exclamation-triangle';
+        } else {
+            notificationIcon.className = 'notification-icon fas fa-info-circle';
+        }
+        
+        notificationText.textContent = message;
+        
+        // Show the notification with timer animation
+        simulationNotification.classList.add('show');
+        
+        // Force a reflow to restart the animation
+        void timerProgress.offsetWidth;
+        
+        // Set animation duration to match the notification duration
+        timerProgress.style.animationDuration = `${duration}ms`;
+        
+        // Start the timer animation
+        timerProgress.classList.add('animate');
+        
+        // Auto-hide after duration
+        window.notificationTimeout = setTimeout(() => {
+            simulationNotification.classList.remove('show');
+        }, duration);
+    }
 });
 
