@@ -1062,20 +1062,38 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('path-stats').innerHTML = pathStatsHTML;
         pathInfo.style.display = 'block';
         
+        // If the path is interrupted, stop the simulation
+        if (!allNodesOn) {
+            stopSimulation = true;
+            // Instead of calling stopSimulationBtn.onclick() which shows "Simulation stopped"
+            // Show a more appropriate message
+            showSimulationNotification(`Cannot simulate: Path blocked at ${path[offNodeIndex].data.name} (OFF)`, "error", 2000);
+            
+            // Clean up any animation elements
+            d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
+            d3.selectAll('.node circle').classed('receiving-message', false);
+            d3.selectAll('.node circle').classed('message-delivered', false);
+            d3.selectAll('.link').classed('active-segment', false);
+            isSimulating = false;
+            simulateBtn.disabled = false;
+            stopSimulationBtn.disabled = true;
+            return;
+        }
+
         // Set simulation mode
         isSimulating = true;
         simulateBtn.disabled = true;
         stopSimulationBtn.disabled = false;
-        
+
         // Show simulation notification
         showSimulationNotification(`Starting simulation: ${sourceNode.data.name} → ${targetNode.data.name}`, "info", 2000);
         simulationLegend.style.opacity = '1';
-        
+
         // Reset stop button handler
         stopSimulationBtn.onclick = () => {
             // Set the stop flag for the animation
             stopSimulation = true;
-            
+
             // Stop any ongoing animations
             d3.select(zoomLayer).selectAll('.message-packet-group, .message-packet-trail').interrupt().remove();
             d3.selectAll('.node circle').classed('receiving-message', false);
@@ -1200,6 +1218,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Clean up
                 packetGroup.remove();
                 d3.selectAll('.node circle').classed('receiving-message', false);
+                return;
+            }
+            
+            // Check if all nodes in path are still ON before proceeding
+            let allNodesStillOn = true;
+            let interruptedNodeName = "";
+            
+            for (let i = 0; i < path.length; i++) {
+                if (!path[i].data.isOn) {
+                    allNodesStillOn = false;
+                    interruptedNodeName = path[i].data.name;
+                    break;
+                }
+            }
+            
+            // If a node has been turned off during simulation, stop
+            if (!allNodesStillOn) {
+                // Clean up
+                packetGroup.remove();
+                d3.selectAll('.node circle').classed('receiving-message', false);
+                d3.selectAll('.link').classed('active-segment', false);
+                
+                // Show failure notification
+                showSimulationNotification(`Path interrupted: ${interruptedNodeName} is now OFF`, "error", 2000);
+                
+                // End the simulation
+                isSimulating = false;
+                simulateBtn.disabled = false;
+                stopSimulationBtn.disabled = true;
+                stopSimulation = true;
+                
                 return;
             }
             
